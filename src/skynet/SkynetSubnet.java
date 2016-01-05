@@ -18,9 +18,20 @@ import java.util.Scanner;
  */
 public class SkynetSubnet implements SubnetBackdoor {
 
-	private static final int ALPHA = 1;
-	private static final int BETA = 2;
-	private static final int GAMMA = 3;
+	/**
+	 * ID of the predefined subnet ALPHA
+	 */
+	public static final int ALPHA = 1;
+
+	/**
+	 * ID of the predefined subnet BETA
+	 */
+	public static final int BETA = 2;
+
+	/**
+	 * ID of the predefined subnet GAMMA
+	 */
+	public static final int GAMMA = 3;
 
 	private int[][] linksAsIntegers;
 
@@ -28,15 +39,12 @@ public class SkynetSubnet implements SubnetBackdoor {
 	private List<Node> gatewayNodes;
 	private Node agentNode = null;
 
-	/**
-	 * Status of the network which means whether a call to disconnectNodes is
-	 * allowed. The disconnection of two nodes is allowed after creation of the
-	 * subnet and after a call to letTheAgentMoveOn
-	 */
-	private boolean disconnectPossible = false;
+	// status notifier
+	private boolean agentMoving = true;
+	private boolean agentOnAGateway = true;
 
 	/**
-	 * If you somehow got to a map of a Skynet subnet you can create a back door
+	 * If you somehow got a map of a Skynet subnet you can create a back door
 	 * to this subnet, which enables you the perform method to prevent the
 	 * subnet agent to reach a gateway to another subnet.
 	 * 
@@ -56,43 +64,36 @@ public class SkynetSubnet implements SubnetBackdoor {
 	 *            </ul>
 	 * @return an object that implements the SubnetnetBackdoor interface
 	 */
-	public static SubnetBackdoor createSubnetBackdoor(String pathToSubnetMap) {
+	public static SubnetBackdoor createSubnet(String pathToSubnetMap) {
 		return new SkynetSubnet(pathToSubnetMap);
 	}
 
 	/**
-	 * Creates a back door to Skynet subnet ALPHA
+	 * Creates a back door to a existing Skynet subnet. The available subnet 
+	 * ID's are:
+	 * <ul>
+	 * <li>ALPHA (1)</li>
+	 * <li>BETA (2)</li>
+	 * <li>GAMMA (3)</li>
+	 * </ul>
+	 * 
+	 * You can use the public constants of the class.
+	 * <p>
+	 * There is also a default subnet which is returned in none of theses 
+	 * strings match.
 	 * 
 	 * @return an object that implements the SubnetnetBackdoor interface
 	 */
-	public static SubnetBackdoor createBackdoorToSubnetAlpha() {
-		return new SkynetSubnet(ALPHA);
-	}
-
-	/**
-	 * Creates a back door to Skynet subnet BETA
-	 * 
-	 * @return an object that implements the SubnetnetBackdoor interface
-	 */
-	public static SubnetBackdoor createBackdoorToSubnetBETA() {
-		return new SkynetSubnet(BETA);
-	}
-
-	/**
-	 * Creates a back door to Skynet subnet GAMMA
-	 * 
-	 * @return an object that implements the SubnetnetBackdoor interface
-	 */
-	public static SubnetBackdoor createBackdoorToSubnetGAMMA() {
-		return new SkynetSubnet(GAMMA);
-	}
-
-	/**
-	 * Creates a back door to a Skynet subnet
-	 * 
-	 * @return an object that implements the SubnetnetBackdoor interface
-	 */
-	public static SubnetBackdoor createBackdoorToSubnet() {
+	public static SubnetBackdoor createBackdoorToExistingSubnet(int subnetId) {
+		if (subnetId == ALPHA) {
+			return new SkynetSubnet(ALPHA);
+		}
+		if (subnetId == BETA) {
+			return new SkynetSubnet(BETA);
+		}
+		if (subnetId == GAMMA) {
+			return new SkynetSubnet(GAMMA);
+		}
 		return new SkynetSubnet(666);
 	}
 
@@ -187,7 +188,7 @@ public class SkynetSubnet implements SubnetBackdoor {
 		// initialize the shortest ways to the gateway
 		this.recalculateAndSetStepsToNextGateway();
 
-		this.disconnectPossible = true;
+		this.calculateStatus();
 	}
 
 	@Override
@@ -196,27 +197,39 @@ public class SkynetSubnet implements SubnetBackdoor {
 	}
 
 	@Override
-	public boolean disconnectNodes(int a, int b) {
-		if (this.disconnectPossible) {
-			Node nodeA = this.nodes.get(new Integer(a));
-			Node nodeB = this.nodes.get(new Integer(b));
-			if (nodeA != null && nodeB != null) {
-				nodeA.removeNeighbour(nodeB);
-				nodeB.removeNeighbour(nodeA);
-				this.removeFromLinksAsIntegers(a, b);
-
-				// change status so if there is no call to getNewAgentPosition
-				// all subsequent calls to disconnectNodes will return false.
-				this.disconnectPossible = false;
-				return true;
-			}
+	public boolean disconnectNodesBeforeAgentMovesOn(int a, int b) {
+		boolean success = false;
+		Node nodeA = this.nodes.get(new Integer(a));
+		Node nodeB = this.nodes.get(new Integer(b));
+		if (nodeA != null && nodeB != null) {
+			nodeA.removeNeighbour(nodeB);
+			nodeB.removeNeighbour(nodeA);
+			this.removeFromLinksAsIntegers(a, b);
+			success = true;
 		}
-		return false;
+
+		// Anyway the agent moves one step forward to the next gateway.
+		this.letTheAgentMoveOn();
+		
+		this.recalculateAndSetStepsToNextGateway();
+		this.calculateStatus();
+
+		return success;
 	}
 
 	@Override
 	public int getAgentPosition() {
 		return this.agentNode.getId();
+	}
+
+	@Override
+	public boolean isAgentStillMoving() {
+		return agentMoving;
+	}
+
+	@Override
+	public boolean isAgentOnAGateway() {
+		return agentOnAGateway;
 	}
 
 	/**
@@ -245,34 +258,18 @@ public class SkynetSubnet implements SubnetBackdoor {
 		}
 	}
 
-	@Override
-	public int letTheAgentMoveOn() throws WinException, LooseException {
+	private Node letTheAgentMoveOn() {
 		if (this.agentNode == null) {
 			throw new RuntimeException("Network not initialized correctly: Agent node is null!");
 		}
 
 		Node newAgentNode = this.findNextNodeToTheNearestGatewayFrom(this.agentNode);
 
-		if (newAgentNode == null || newAgentNode.stepsToNextGateway == Integer.MAX_VALUE) {
-			throw new WinException();
+		if (newAgentNode != null) {
+			this.setAgentNode(newAgentNode);
 		}
 
-		this.setAgentNode(newAgentNode);
-
-		if (this.agentNode.isGateway()) {
-			throw new LooseException(
-					"The world is lost! The agent reached the next subnet via gateway " + this.agentNode.getId() + "!");
-		}
-
-		// after setting the new agent node, it is necessary to recalculate the
-		// the number of
-		// steps to the next gateway node from each node
-		this.recalculateAndSetStepsToNextGateway();
-
-		// change status so one call to disconnectNodes may be successful.
-		this.disconnectPossible = true;
-
-		return this.agentNode.getId();
+		return this.agentNode;
 	}
 
 	@Override
@@ -282,6 +279,28 @@ public class SkynetSubnet implements SubnetBackdoor {
 			gatewayNodeIds[i] = this.gatewayNodes.get(i).getId();
 		}
 		return gatewayNodeIds;
+	}
+
+	/**
+	 * The status of the game depend on whether the agent has reached a
+	 * gateway node or not and if it is still possible to reach a gateway node.
+	 * <ul>
+	 * <li>	isAgentStruggling() == true means that it is still possible for 
+	 * the agent to reach a gateway node</li>
+	 * <li> isAgentHasNotYetReachedAGateway() == true means that the agent has 
+	 * not not yet reached a gateway node</li>
+	 */
+	private void calculateStatus() {
+		if (this.agentNode.getStepsToNextGateway() == Integer.MAX_VALUE) {
+			this.agentMoving = false;
+			this.agentOnAGateway = false;
+		} else if (this.agentNode.isGateway()) {
+			this.agentMoving = false;
+			this.agentOnAGateway = true;
+		} else {
+			this.agentMoving = true;
+			this.agentOnAGateway = false;
+		}
 	}
 
 	/**
@@ -376,12 +395,18 @@ public class SkynetSubnet implements SubnetBackdoor {
 	 * 
 	 * @param current
 	 *            the node from which the next step must be calculated.
-	 * @return the node to which to go next
+	 * @return the node to which to go next. If current is a gateway node return
+	 *         current.
 	 */
 	private Node findNextNodeToTheNearestGatewayFrom(Node current) {
 		if (current == null) {
 			throw new RuntimeException("Current node is null!");
 		}
+
+		if (current.isGateway()) {
+			return current;
+		}
+
 		Node neighbour = current.findNeighbourWithMinimumStepsToNextGateway();
 		// because a link could have been disconnected the count of steps to the
 		// next gateway from the current node may be wrong. It must be corrected

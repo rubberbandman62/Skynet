@@ -16,6 +16,7 @@
  * that the Skynet Agent is unable to access another sub-network thus preventing 
  * information concerning the presence of our virus to reach Skynet's central hub. 
  * This package gives you the necessary tools through the interface SubnetBackdoor.
+ * See the documentation for class RunSubnetBckdoor for how to use the interface.
  * <p>
  * Following an example with four nodes including a gateway at node 3 (in red). 
  * The Agent (black marker) is initially positioned on node 0:
