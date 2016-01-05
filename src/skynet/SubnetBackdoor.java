@@ -1,5 +1,12 @@
 package skynet;
 
+/**
+ * Interface that enables you to read a skynet subnet and to manipulate it by 
+ * disconnecting nodes.
+ * 
+ * @author hto
+ *
+ */
 public interface SubnetBackdoor {
 
 	/**

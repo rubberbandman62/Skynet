@@ -44,9 +44,9 @@ public class SkynetSubnet implements SubnetBackdoor {
 	private boolean agentOnAGateway = true;
 
 	/**
-	 * If you somehow got a map of a Skynet subnet you can create a back door
-	 * to this subnet, which enables you the perform method to prevent the
-	 * subnet agent to reach a gateway to another subnet.
+	 * If you somehow got a map of a Skynet subnet you can create a back door to
+	 * this subnet, which enables you the perform method to prevent the subnet
+	 * agent to reach a gateway to another subnet.
 	 * 
 	 * @param pathToSubnetMap
 	 *            the filename of the stolen map. The file must be found on the
@@ -69,7 +69,7 @@ public class SkynetSubnet implements SubnetBackdoor {
 	}
 
 	/**
-	 * Creates a back door to a existing Skynet subnet. The available subnet 
+	 * Creates a back door to a existing Skynet subnet. The available subnet
 	 * ID's are:
 	 * <ul>
 	 * <li>ALPHA (1)</li>
@@ -79,10 +79,13 @@ public class SkynetSubnet implements SubnetBackdoor {
 	 * 
 	 * You can use the public constants of the class.
 	 * <p>
-	 * There is also a default subnet which is returned in none of theses 
+	 * There is also a default subnet which is returned in none of theses
 	 * strings match.
 	 * 
-	 * @return an object that implements the SubnetnetBackdoor interface
+	 * @param subnetId
+	 *            integer id of an subnet
+	 * @return an object that implements the SubnetnetBackdoor interface. If the
+	 *         ID is not 1, 2 or 3 a default subnet is returned.
 	 */
 	public static SubnetBackdoor createBackdoorToExistingSubnet(int subnetId) {
 		if (subnetId == ALPHA) {
@@ -210,7 +213,7 @@ public class SkynetSubnet implements SubnetBackdoor {
 
 		// Anyway the agent moves one step forward to the next gateway.
 		this.letTheAgentMoveOn();
-		
+
 		this.recalculateAndSetStepsToNextGateway();
 		this.calculateStatus();
 
@@ -282,12 +285,12 @@ public class SkynetSubnet implements SubnetBackdoor {
 	}
 
 	/**
-	 * The status of the game depend on whether the agent has reached a
-	 * gateway node or not and if it is still possible to reach a gateway node.
+	 * The status of the game depend on whether the agent has reached a gateway
+	 * node or not and if it is still possible to reach a gateway node.
 	 * <ul>
-	 * <li>	isAgentStruggling() == true means that it is still possible for 
-	 * the agent to reach a gateway node</li>
-	 * <li> isAgentHasNotYetReachedAGateway() == true means that the agent has 
+	 * <li>isAgentStruggling() == true means that it is still possible for the
+	 * agent to reach a gateway node</li>
+	 * <li>isAgentHasNotYetReachedAGateway() == true means that the agent has
 	 * not not yet reached a gateway node</li>
 	 */
 	private void calculateStatus() {
