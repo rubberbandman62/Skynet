@@ -27,7 +27,7 @@ public interface SubnetBackdoor {
 	public int[][] getNodeLinks();
 
 	/**
-	 * Disconnects a link between two nodes before the the agent moves on.
+	 * Disconnects a link between two nodes and than make the agent move on.
 	 * 
 	 * @param a
 	 *            first node of the link

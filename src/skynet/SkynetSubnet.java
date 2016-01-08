@@ -166,6 +166,11 @@ public class SkynetSubnet implements SubnetBackdoor {
 		}
 	}
 
+	/**
+	 * Helper to select one on the predefined subnets.
+	 * @param subnetID the id of the subnet.
+	 * @return the path to the subnet as a string
+	 */
 	private String getPathToSubnetMap(int subnetID) {
 		String pathToSubnetMap = "";
 		switch (subnetID) {
@@ -267,8 +272,7 @@ public class SkynetSubnet implements SubnetBackdoor {
 		// nodesLinkedToGateways - Map including integers of nodes linked to
 		// each gateway
 		// nodesLinkedToNodes - Map including integers of none gateway nodes
-		// linked to each
-		// none gateway node
+		// linked to each none gateway node
 		// agentNode - the agent position among none gateway nodes.
 		Set<Integer> nodes = new LinkedHashSet<Integer>(numberOfNodes);
 		for (int i = 0; i < numberOfNodes; i++) {
