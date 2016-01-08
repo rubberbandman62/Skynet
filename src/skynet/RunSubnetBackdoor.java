@@ -44,8 +44,9 @@ public class RunSubnetBackdoor {
 	 *            is not used in this example
 	 */
 	public static void main(String[] args) {
-		// SubnetBackdoor backdoor = SkynetSubnet.createBackdoorToExistingSubnet(SkynetSubnet.ALPHA);
-		SubnetBackdoor backdoor = SkynetSubnet.createRandomSubnet(500);
+		SubnetBackdoor backdoor = SkynetSubnet.createBackdoorToExistingSubnet(SkynetSubnet.ALPHA);
+		// SubnetBackdoor backdoor = SkynetSubnet.createRandomSubnet(50);
+		// System.out.println(backdoor);
 		int[] gatewayNodes = backdoor.getGatewayNodes();
 		int pos = backdoor.getAgentPosition();
 		int links[][] = backdoor.getNodeLinks();

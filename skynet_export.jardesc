@@ -13,6 +13,5 @@
     <selectedElements exportClassFiles="true" exportJavaFiles="false" exportOutputFolder="false">
         <javaElement handleIdentifier="=Skynet/src"/>
         <javaElement handleIdentifier="=Skynet/data"/>
-        <folder path="/Skynet/lib"/>
     </selectedElements>
 </jardesc>

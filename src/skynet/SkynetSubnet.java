@@ -768,4 +768,19 @@ public class SkynetSubnet implements SubnetBackdoor {
 		}
 	}
 
+	@Override
+	public String toString() {
+		StringBuilder str = new StringBuilder();
+		str.append(this.linksAsIntegers.length).append("\r\n");
+		str.append(this.getGatewayNodes().length).append("\r\n");
+		for (int[] link : this.getNodeLinks()) {
+			str.append(link[0]).append(" ").append(link[1]).append("\r\n");
+		}
+		for (int id : this.getGatewayNodes()) {
+			str.append(id).append("\r\n");
+		}
+		str.append(this.getAgentPosition()).append("\r\n");
+		return str.toString();
+	}
+
 }
