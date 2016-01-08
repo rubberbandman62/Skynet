@@ -2,10 +2,15 @@ package skynet;
 
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.Set;
+
+import org.apache.commons.math3.random.RandomDataGenerator;
 
 /**
  * The Skynet subnet which implements the public interface SubnetBackdoor
@@ -17,6 +22,11 @@ import java.util.Scanner;
  *
  */
 public class SkynetSubnet implements SubnetBackdoor {
+
+	/**
+	 * ID of the predefined default subnet
+	 */
+	public static final int DEFAULT = 4;
 
 	/**
 	 * ID of the predefined subnet ALPHA
@@ -35,8 +45,8 @@ public class SkynetSubnet implements SubnetBackdoor {
 
 	private int[][] linksAsIntegers;
 
-	private Map<Integer, Node> nodes;
-	private List<Node> gatewayNodes;
+	private Map<Integer, Node> nodes = new HashMap<>();
+	private List<Node> gatewayNodes = new ArrayList<>();
 	private Node agentNode = null;
 
 	// status notifier
@@ -69,6 +79,20 @@ public class SkynetSubnet implements SubnetBackdoor {
 	}
 
 	/**
+	 * Creates a randomly generated Network with the specified number of nodes
+	 * The algorithm declares between 1 and numberOfNodes/2 nodes to be gateways,
+	 * connects some nodes to the gateways (a none gateway node is connected to at
+	 * most one gateways node) and generates links between the none gateway
+	 * nodes. Finally a none gateway node is selected to be the agent node.
+	 * 
+	 * @param numberOfNodes the number of the nodes in the network
+	 * @return an object implementing the SubnetBackdor interface
+	 */
+	public static SubnetBackdoor createRandomSubnet(int numberOfNodes) {
+		return new SkynetSubnet(numberOfNodes);
+	}
+
+	/**
 	 * Creates a back door to a existing Skynet subnet. The available subnet
 	 * ID's are:
 	 * <ul>
@@ -97,7 +121,7 @@ public class SkynetSubnet implements SubnetBackdoor {
 		if (subnetId == GAMMA) {
 			return new SkynetSubnet(GAMMA);
 		}
-		return new SkynetSubnet(666);
+		return new SkynetSubnet(DEFAULT);
 	}
 
 	/**
@@ -111,27 +135,35 @@ public class SkynetSubnet implements SubnetBackdoor {
 		InputStream subnetMapInput = getClass().getResourceAsStream(pathToSubnetMap);
 		Scanner in = new Scanner(subnetMapInput);
 
-		this.initializeSubnet(in);
+		this.initializeSubnetFromFile(in);
 
 		in.close();
 	}
 
 	/**
-	 * Create a new subnet with a predefined networks
+	 * Create a new subnet with a predefined or a random network
 	 * 
-	 * @param subnetID
-	 *            id of the predefined network may be 1, 2 or 3 all other
-	 *            integers cause the network to be initialized with a default
+	 * @param selector
+	 *            id of the predefined network may be 1, 2, 3 or 4 all other
+	 *            integers cause the network to be initialized with a random
 	 *            network.
 	 */
-	private SkynetSubnet(int subnetID) {
-		String pathToSubnetMap = getPathToSubnetMap(subnetID);
-		InputStream subnetMapInput = getClass().getResourceAsStream(pathToSubnetMap);
-		Scanner in = new Scanner(subnetMapInput);
+	private SkynetSubnet(int selector) {
 
-		this.initializeSubnet(in);
+		if (selector < 5 && selector > 0) {
+			String pathToSubnetMap = getPathToSubnetMap(selector);
+			InputStream subnetMapInput = getClass().getResourceAsStream(pathToSubnetMap);
+			Scanner in = new Scanner(subnetMapInput);
 
-		in.close();
+			this.initializeSubnetFromFile(in);
+
+			in.close();
+		} else if (selector > 4) {
+			this.initializeRandomSubnet(selector);
+		} else {
+			throw new RuntimeException(
+					"Illegal subnet selector " + selector + ". the selctor must be greater than zero.");
+		}
 	}
 
 	private String getPathToSubnetMap(int subnetID) {
@@ -157,41 +189,185 @@ public class SkynetSubnet implements SubnetBackdoor {
 	}
 
 	/**
-	 * Initializes all the fields in SkynetSubnet object.
+	 * Initializes a Skynet subnet from a file.
 	 * 
 	 * @param map
-	 *            is the file where the initialization is stored. (see
-	 *            {@link #createSubnetBackdoor(String pathToSubnetMap} for the
-	 *            file format)
+	 *            is the scanner to a file where the initialization is stored.
+	 *            (see {@link #createSubnetBackdoor(String pathToSubnetMap} for
+	 *            the file format)
 	 */
-	private void initializeSubnet(Scanner map) {
+	private void initializeSubnetFromFile(Scanner map) {
 		int l = map.nextInt(); // the number of links
 		int e = map.nextInt(); // the number of exit gateways
 
 		// initialize nodes and links between nodes (stored in the nodes)
-		this.linksAsIntegers = new int[l][2];
-		this.nodes = new HashMap<Integer, Node>();
+		int[][] links = new int[l][2];
 		for (int i = 0; i < l; i++) {
-			int nodeIdA = map.nextInt(); // nodeIdA and nodeIdB defines a link
-											// between these nodes
+			int nodeIdA = map.nextInt();
 			int nodeIdB = map.nextInt();
-			this.addLink(nodeIdA, nodeIdB);
-			this.linksAsIntegers[i] = new int[] { nodeIdA, nodeIdB };
+			links[i] = new int[] { nodeIdA, nodeIdB };
 		}
 
 		this.gatewayNodes = new ArrayList<Node>();
+		int[] gateways = new int[e];
 		for (int i = 0; i < e; i++) {
-			int gatewayId = map.nextInt(); // the index of a gateway node
-			this.addGateway(gatewayId);
+			int gatewayId = map.nextInt();
+			gateways[i] = gatewayId;
 		}
 
 		int agentPosition = map.nextInt();
+
+		this.initializeSubnet(links, gateways, agentPosition);
+	}
+
+	/**
+	 * initializes the fields of subnet
+	 * 
+	 * @param links
+	 *            nx2 matrix of n links
+	 * @param gateways
+	 *            array of gateways
+	 * @param agentPosition
+	 *            position of the agentnode
+	 */
+	private void initializeSubnet(int[][] links, int[] gateways, int agentPosition) {
+		this.linksAsIntegers = links;
+
+		// initialize nodes an links between nodes
+		this.nodes = new HashMap<Integer, Node>();
+		for (int i = 0; i < links.length; i++) {
+			this.addLink(links[i][0], links[i][1]);
+		}
+
+		// initialize gateway nodes
+		this.gatewayNodes = new ArrayList<Node>();
+		for (int i = 0; i < gateways.length; i++) {
+			this.addGateway(gateways[i]);
+		}
+
 		this.setAgentNode(agentPosition);
 
 		// initialize the shortest ways to the gateway
 		this.recalculateAndSetStepsToNextGateway();
 
 		this.calculateStatus();
+	}
+
+	/**
+	 * Randomly creates gateways from the integers 0 to numberOfNodes-1 and
+	 * links between all nodes considering that each node may at most be linked
+	 * to one gateway.
+	 * 
+	 * @param numberOfNodes
+	 *            of nodes in the network
+	 */
+	private void initializeRandomSubnet(int numberOfNodes) {
+		// gateways - Integers for all gateway nodes from nodeIds
+		// noneGateways - nodeIds - gatewayIds
+		// nodesLinkedToGateways - Map including integers of nodes linked to
+		// each gateway
+		// nodesLinkedToNodes - Map including integers of none gateway nodes
+		// linked to each
+		// none gateway node
+		// agentNode - the agent position among none gateway nodes.
+		Set<Integer> nodes = new LinkedHashSet<Integer>(numberOfNodes);
+		for (int i = 0; i < numberOfNodes; i++) {
+			nodes.add(Integer.valueOf(i));
+		}
+		RandomDataGenerator rdg = new RandomDataGenerator();
+		// rdg.reSeed(1234567890);
+
+		// at most half of all nodes can be gateways
+		int numberOfGateways = rdg.nextInt(1, numberOfNodes / 2);
+
+		// select numberOfGateways integers from 0 to numberOfNodes - 1
+		int[] gatewayInts = rdg.nextPermutation(numberOfNodes, numberOfGateways);
+		Set<Integer> gatewayNodes = new LinkedHashSet<Integer>(numberOfGateways);
+		for (int i = 0; i < numberOfGateways; i++) {
+			gatewayNodes.add(Integer.valueOf(gatewayInts[i]));
+		}
+
+		// now identify the none gateway nodes
+		Set<Integer> noneGatewayIds = new LinkedHashSet<Integer>(nodes);
+		noneGatewayIds.removeAll(gatewayNodes);
+		int numberOfNoneGateways = noneGatewayIds.size();
+
+		// now create numberOfGateways disjunct subsets of the integers
+		int m = numberOfNoneGateways / numberOfGateways;
+		Set<Integer> restIds = new LinkedHashSet<Integer>(noneGatewayIds);
+		HashMap<Integer, Collection<Integer>> nodesLinkedToGateways = new HashMap<>();
+		for (Integer id : gatewayNodes) {
+			int ni = rdg.nextInt(1, m);
+			Object[] objs = rdg.nextSample(restIds, ni);
+			ArrayList<Integer> nodesLinkedToGateway = new ArrayList<>(ni);
+			for (Object obj : objs) {
+				nodesLinkedToGateway.add((Integer) obj);
+			}
+			nodesLinkedToGateways.put(id, nodesLinkedToGateway);
+			restIds.removeAll(nodesLinkedToGateway);
+		}
+
+		// now randomly create links between all none gateway nodes
+		HashMap<Integer, Collection<Integer>> nodesLinkedToNodes = new HashMap<>();
+		Set<Integer> otherNodeIds = new LinkedHashSet<>(noneGatewayIds);
+		int possibleLinks = numberOfNoneGateways;
+		for (Integer id : noneGatewayIds) {
+			otherNodeIds.remove(id);
+			possibleLinks -= 1;
+
+			if (possibleLinks > 0) {
+				int ni = rdg.nextInt(1, possibleLinks);
+				Object[] objs = rdg.nextSample(otherNodeIds, ni);
+				ArrayList<Integer> nodesLinkedToNode = new ArrayList<>(ni);
+				for (Object obj : objs) {
+					nodesLinkedToNode.add((Integer) obj);
+				}
+				nodesLinkedToNodes.put(id, nodesLinkedToNode);
+			} else {
+				nodesLinkedToNodes.put(id, new ArrayList<Integer>());
+			}
+		}
+
+		// select an agent node
+		Object[] objs = rdg.nextSample(noneGatewayIds, 1);
+		Integer agentNode = (Integer) objs[0];
+
+		// finally prepare for initializing the network
+		int numberOfLinks = 0;
+		for (Collection<Integer> links : nodesLinkedToGateways.values()) {
+			numberOfLinks += links.size();
+		}
+		for (Collection<Integer> links : nodesLinkedToNodes.values()) {
+			numberOfLinks += links.size();
+		}
+
+		int[][] links = new int[numberOfLinks][2];
+		int index = 0;
+		for (Integer id : nodes) {
+			if (nodesLinkedToNodes.containsKey(id)) {
+				for (Integer nodeId : nodesLinkedToNodes.get(id)) {
+					links[index][0] = id;
+					links[index][1] = nodeId;
+					index++;
+				}
+			}
+			if (nodesLinkedToGateways.containsKey(id)) {
+				for (Integer nodeId : nodesLinkedToGateways.get(id)) {
+					links[index][0] = id;
+					links[index][1] = nodeId;
+					index++;
+				}
+			}
+		}
+
+		int[] gateways = new int[numberOfGateways];
+		index = 0;
+		for (Integer id : gatewayNodes) {
+			gateways[index] = id;
+			index++;
+		}
+
+		initializeSubnet(links, gateways, agentNode.intValue());
 	}
 
 	@Override

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="WINDOWS-1252" standalone="no"?>
 <jardesc>
-    <jar path="Skynet/lib/skynet.jar"/>
+    <jar path="Skynet/export/skynet.jar"/>
     <options buildIfNeeded="true" compress="true" descriptionLocation="/Skynet/skynet_export.jardesc" exportErrors="true" exportWarnings="true" includeDirectoryEntries="false" overwrite="false" saveDescription="true" storeRefactorings="false" useSourceFolders="false"/>
     <storedRefactorings deprecationInfo="true" structuralOnly="false"/>
     <selectedProjects/>
@@ -13,5 +13,6 @@
     <selectedElements exportClassFiles="true" exportJavaFiles="false" exportOutputFolder="false">
         <javaElement handleIdentifier="=Skynet/src"/>
         <javaElement handleIdentifier="=Skynet/data"/>
+        <folder path="/Skynet/lib"/>
     </selectedElements>
 </jardesc>

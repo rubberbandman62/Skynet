@@ -44,13 +44,23 @@ public class RunSubnetBackdoor {
 	 *            is not used in this example
 	 */
 	public static void main(String[] args) {
-		SubnetBackdoor backdoor = SkynetSubnet.createBackdoorToExistingSubnet(SkynetSubnet.ALPHA);
+		// SubnetBackdoor backdoor = SkynetSubnet.createBackdoorToExistingSubnet(SkynetSubnet.ALPHA);
+		SubnetBackdoor backdoor = SkynetSubnet.createRandomSubnet(500);
+		int[] gatewayNodes = backdoor.getGatewayNodes();
+		int pos = backdoor.getAgentPosition();
 		int links[][] = backdoor.getNodeLinks();
+		System.out.println(links.length);
+		System.out.println(gatewayNodes.length);
 		for (int[] link : links) {
 			System.out.println("" + link[0] + " " + link[1]);
 		}
-
-		int pos = backdoor.getAgentPosition();
+		for (int id : gatewayNodes) {
+			System.out.println(id);
+		}
+		System.out.println(pos);
+		
+		System.out.println();
+		System.out.println();
 		System.out.println("The agent starts at position: " + pos);
 
 		backdoor.disconnectNodesBeforeAgentMovesOn(links[0][0], links[0][1]);
