@@ -15,6 +15,7 @@
  * Your mission is to reprogram the virus so it will sever links in such a way 
  * that the Skynet Agent is unable to access another sub-network thus preventing 
  * information concerning the presence of our virus to reach Skynet's central hub. 
+ * To ease your task one node may at most be connected to one gateway node. 
  * This package gives you the necessary tools through the interface SubnetBackdoor.
  * See the documentation for class RunSubnetBckdoor for how to use the interface.
  * <p>

@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <project default="javadoc">
     <target name="javadoc">
-        <javadoc access="public" author="true" classpath="C:\Entwicklung\eclipseEE\plugins\org.hamcrest.core_1.3.0.v201303031735.jar;C:\Entwicklung\eclipseEE\plugins\org.junit_4.12.0.v201504281640\junit.jar" destdir="doc" nodeprecated="false" nodeprecatedlist="false" noindex="false" nonavbar="false" notree="false" source="1.8" sourcefiles="src/skynet/package-info.java,src/skynet/RunSubnetBackdoor.java,src/skynet/SubnetBackdoor.java,src/skynet/SkynetSubnet.java" sourcepath="src;data;test" splitindex="true" use="true" version="true"/>
+        <javadoc access="public" author="true" classpath="C:\Entwicklung\eclipseEE\plugins\org.hamcrest.core_1.3.0.v201303031735.jar;lib/commons-math3-3.6.jar;C:\Entwicklung\eclipseEE\plugins\org.junit_4.12.0.v201504281640\junit.jar" destdir="doc" nodeprecated="false" nodeprecatedlist="false" noindex="false" nonavbar="false" notree="false" source="1.8" sourcefiles="src/skynet/package-info.java,src/skynet/RunSubnetBackdoor.java,src/skynet/SubnetBackdoor.java,src/skynet/SkynetSubnet.java" sourcepath="src;data;test" splitindex="true" use="true" version="true">
+            <link href="https://commons.apache.org/proper/commons-math/javadocs/api-3.6"/>
+        </javadoc>
     </target>
 </project>

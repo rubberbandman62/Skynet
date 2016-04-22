@@ -79,13 +79,13 @@ public class SkynetSubnet implements SubnetBackdoor {
 	}
 
 	/**
-	 * Creates a randomly generated Network with the specified number of nodes
+	 * Creates a randomly generated network with the specified number of nodes.
 	 * The algorithm declares between 1 and numberOfNodes/2 nodes to be gateways,
-	 * connects some nodes to the gateways (a none gateway node is connected to at
-	 * most one gateways node) and generates links between the none gateway
+	 * connects some nodes to the gateways (a none gateway node is connected at
+	 * most to one gateway node) and generates links between the none gateway
 	 * nodes. Finally a none gateway node is selected to be the agent node.
 	 * 
-	 * @param numberOfNodes the number of the nodes in the network
+	 * @param numberOfNodes the number of the nodes in the network &gt; 4
 	 * @return an object implementing the SubnetBackdor interface
 	 */
 	public static SubnetBackdoor createRandomSubnet(int numberOfNodes) {
@@ -319,7 +319,7 @@ public class SkynetSubnet implements SubnetBackdoor {
 			otherNodeIds.remove(id);
 			possibleLinks -= 1;
 
-			if (possibleLinks > 0) {
+			if (possibleLinks > 1) {
 				int ni = rdg.nextInt(1, possibleLinks);
 				Object[] objs = rdg.nextSample(otherNodeIds, ni);
 				ArrayList<Integer> nodesLinkedToNode = new ArrayList<>(ni);
